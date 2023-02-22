@@ -4,21 +4,17 @@ import numpy as np
 import os
 from color_recog import ColorDetection
 
+# load the model
 model = YOLO('v6_150.pt')
+
+# start up webcam
 cap = cv2.VideoCapture(0)
 
 while True:
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-
     _, frame = cap.read()
     frame = cv2.resize(frame, (640, 640))
 
     re = model.predict(source=frame, conf=0.7)
-    cv2.imshow('frame', frame)
-
-    key = cv2.waitKey(100)  
 
     try:
         # detect and assign object
@@ -33,7 +29,11 @@ while True:
 
     except:
         print("Undetected")
-    
+
+    # show frame
+    cv2.imshow('frame', frame)
+    key = cv2.waitKey(100)  
+
     if key == ord('q'):
         break
     elif key == ord('e'):
