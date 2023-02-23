@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import os
+import threading
+import queue
 
 class ColorDetection:
     def __init__(self, cap):
@@ -58,23 +60,46 @@ class ColorDetection:
         else:
             pass
 
-# cap = cv2.VideoCapture(0)
+    def outputColor2(color):
+        os.system("afplay "+f"speech/{color}des.mp3")
 
-# while True:
-#     _, frame = cap.read()
-#     frame = cv2.resize(frame, (640,640))
-#     color = ColorDetection.detectColor(frame)
-#     object = 'banknote'
-#     print(color)
-#     cv2.imshow('g', frame)
-#     key = cv2.waitKey(1)
-#     if key == ord('q'):
-#         break
-#     elif key == ord('e'):
-#         ColorDetection.outputColor(object, color, 'en')
-#     elif key == ord('t'):
-#         ColorDetection.outputColor(object, color, 'th')
-    
 
-# cap.release()
-# cv2.destroyAllWindows()
+def detect(cap, message_queue):
+    while True:
+        _, frame = cap.read()
+        frame = cv2.resize(frame, (640, 640))
+        color = ColorDetection.detectColor(frame)
+        print(color)
+        message_queue.put(frame)
+        message_queue.put(color)
+        key = cv2.waitKey(1)
+        if key == ord('q'):
+            message_queue.put('quit')
+            break
+        elif key == ord('p'):
+            ColorDetection.outputColor2(color)
+    cap.release()
+
+def showFrame(message_queue):
+    while True:
+        message = message_queue.get()
+        if message == 'quit':
+            break
+        frame = message
+        color = message_queue.get()
+        cv2.imshow('Frame', frame)
+        key = cv2.waitKey(1)
+        if key == ord('q'):
+            message_queue.put('quit')
+            break
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    cap = cv2.VideoCapture(0)
+    message_queue = queue.Queue()
+    t1 = threading.Thread(target=detect, args=(cap, message_queue))
+    t2 = threading.Thread(target=showFrame, args=(message_queue,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
